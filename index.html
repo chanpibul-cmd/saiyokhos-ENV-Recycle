@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- DataTables CSS สำหรับตาราง -->
+    <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     
     <style>
@@ -21,9 +21,8 @@
         .page { display: none; padding-top: 20px; }
         .active { display: block; animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        /* แต่ง DataTables ให้สวยเข้ากับ Bootstrap */
-        .dataTables_wrapper .row { margin-bottom: 10px; }
+        .chart-container { position: relative; height: 350px; width: 100%; }
+        .chart-container-doughnut { position: relative; height: 300px; width: 100%; }
     </style>
 </head>
 <body>
@@ -36,9 +35,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active-tab" id="tab1" onclick="showPage('page1', this)"><i class="fas fa-chart-pie me-1"></i> Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" id="tab2" onclick="showPage('page2', this)"><i class="fas fa-table me-1"></i> ข้อมูลทั้งหมด</a></li>
-                <li class="nav-item"><a class="nav-link" id="tab3" onclick="showPage('page3', this)"><i class="fas fa-edit me-1"></i> บันทึกข้อมูล</a></li>
+                <li class="nav-item"><a class="nav-link active-tab" onclick="showPage('page1', this)"><i class="fas fa-chart-pie me-1"></i> Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="showPage('page2', this)"><i class="fas fa-table me-1"></i> ข้อมูลทั้งหมด</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="showPage('page3', this)"><i class="fas fa-edit me-1"></i> บันทึกข้อมูล</a></li>
             </ul>
         </div>
     </div>
@@ -48,39 +47,107 @@
     <!-- ================= หน้า 1: Dashboard ================= -->
     <div id="page1" class="page active">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="fw-bold"><i class="fas fa-tachometer-alt text-success me-2"></i> สรุปผลภาพรวม</h3>
+            <h3 class="fw-bold"><i class="fas fa-tachometer-alt text-success me-2"></i> Dashboard สรุปผล</h3>
             <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="fetchData()">
-                <i class="fas fa-sync-alt me-1"></i> รีเฟรชข้อมูล
+                <i class="fas fa-sync-alt me-1"></i> ดึงข้อมูลล่าสุด
             </button>
         </div>
-        
-        <!-- กราฟ 3 ส่วน -->
-        <div class="row">
-            <div class="col-lg-4 col-md-12"><div class="card p-3"><h6 class="text-center fw-bold">สัดส่วนแยกตามประเภท (กก.)</h6><div class="chart-container"><canvas id="chartType"></canvas></div></div></div>
-            <div class="col-lg-4 col-md-12"><div class="card p-3"><h6 class="text-center fw-bold">ปริมาณขยะแยกรายเดือน (กก.)</h6><div class="chart-container"><canvas id="chartMonth"></canvas></div></div></div>
-            <div class="col-lg-4 col-md-12"><div class="card p-3"><h6 class="text-center fw-bold">ปริมาณขยะตามปีงบประมาณ (กก.)</h6><div class="chart-container"><canvas id="chartFY"></canvas></div></div></div>
-        </div>
 
-        <!-- ตารางสรุปผลรวม -->
-        <div class="card p-3 mt-2 border-top border-success border-4">
-            <h5 class="text-center fw-bold text-success mb-3"><i class="fas fa-calculator me-2"></i> ตารางสรุปผลรวมทั้งหมด</h5>
-            <div class="table-responsive">
-                <table class="table table-bordered text-center align-middle mb-0">
-                    <thead class="table-success">
-                        <tr>
-                            <th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th>
-                            <th>โลหะผสม</th><th>แก้ว</th><th>อลูมิเนียม</th>
-                            <th class="bg-success text-white">รวมทั้งสิ้น (กก.)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr id="summaryRow" class="fs-5 fw-bold text-dark">
-                            <!-- ข้อมูลจะถูกเติมด้วย Javascript -->
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- เครื่องมือกรองข้อมูล -->
+        <div class="card p-3 mb-4 bg-white border-start border-success border-4">
+            <h6 class="fw-bold text-success"><i class="fas fa-filter me-1"></i> กรองข้อมูลตามช่วงเวลา</h6>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label mb-1 small">ตั้งแต่วันที่</label>
+                    <input type="date" id="filterStart" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-1 small">ถึงวันที่</label>
+                    <input type="date" id="filterEnd" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-success btn-sm me-1" onclick="applyFilter()"><i class="fas fa-search"></i> ค้นหา</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearFilter()"><i class="fas fa-times"></i> ล้างค่า</button>
+                </div>
             </div>
         </div>
+        
+        <!-- แถวที่ 1: กราฟปีงบประมาณ -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card p-4 border-top border-primary border-4">
+                    <h5 class="text-center fw-bold text-primary">1. ปริมาณขยะตามปีงบประมาณ (แยกประเภท)</h5>
+                    <div class="chart-container mb-3"><canvas id="chartFY"></canvas></div>
+                    <div class="text-center">
+                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#tableFYCollapse">
+                            <i class="fas fa-table me-1"></i> โชว์/ซ่อน ตารางข้อมูลปีงบประมาณ
+                        </button>
+                    </div>
+                    <div class="collapse mt-3" id="tableFYCollapse">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm text-center align-middle" id="tableFY">
+                                <thead class="table-primary">
+                                    <tr><th>ปีงบประมาณ</th><th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th><th>โลหะผสม</th><th>แก้ว</th><th>อลูมิเนียม</th><th class="bg-primary text-white">รวม (กก.)</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- แถวที่ 2: กราฟรายเดือน -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card p-4 border-top border-info border-4">
+                    <h5 class="text-center fw-bold text-info">2. ปริมาณขยะแยกรายเดือน (แยกประเภท)</h5>
+                    <div class="chart-container mb-3"><canvas id="chartMonth"></canvas></div>
+                    <div class="text-center">
+                        <button class="btn btn-outline-info btn-sm" data-bs-toggle="collapse" data-bs-target="#tableMonthCollapse">
+                            <i class="fas fa-table me-1"></i> โชว์/ซ่อน ตารางข้อมูลรายเดือน
+                        </button>
+                    </div>
+                    <div class="collapse mt-3" id="tableMonthCollapse">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm text-center align-middle" id="tableMonth">
+                                <thead class="table-info">
+                                    <tr><th>เดือน-ปี</th><th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th><th>โลหะผสม</th><th>แก้ว</th><th>อลูมิเนียม</th><th class="bg-info text-white">รวม (กก.)</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- แถวที่ 3: สัดส่วนแยกตามประเภท -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card p-4 border-top border-warning border-4">
+                    <h5 class="text-center fw-bold text-warning mb-4">3. สัดส่วนแยกตามประเภททั้งหมด (กก.)</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="chart-container-doughnut"><canvas id="chartType"></canvas></div>
+                        </div>
+                        <div class="col-md-6 mt-4 mt-md-0">
+                            <!-- ตารางรวม -->
+                            <table class="table table-bordered text-center align-middle">
+                                <thead class="table-warning">
+                                    <tr><th>ประเภท</th><th>ปริมาณรวม (กก.)</th></tr>
+                                </thead>
+                                <tbody id="summaryTableBody"></tbody>
+                                <tfoot>
+                                    <tr class="fw-bold fs-5 bg-light"><td class="text-end">รวมทั้งสิ้น :</td><td id="grandTotalText" class="text-success">0</td></tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- ================= หน้า 2: ข้อมูลทั้งหมด ================= -->
@@ -101,15 +168,15 @@
                             <th>โลหะ</th><th>แก้ว</th><th>อลูฯ</th>
                         </tr>
                     </thead>
-                    <tbody><!-- Data will be loaded here --></tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <!-- ================= หน้า 3: ฟอร์มกรอกข้อมูล ================= -->
+    <!-- (เหมือนเดิม ไม่มีการเปลี่ยนแปลงในส่วนนี้) -->
     <div id="page3" class="page">
-        <!-- ส่วนเช็ครหัสผ่าน -->
         <div id="loginSection" class="card p-5 mx-auto shadow-sm" style="max-width: 450px;">
             <div class="text-center mb-4">
                 <i class="fas fa-user-lock fa-4x text-success mb-3"></i>
@@ -119,7 +186,6 @@
             <button class="btn btn-success btn-lg w-100 rounded-pill" onclick="checkAuth()">ยืนยัน</button>
         </div>
 
-        <!-- ฟอร์มกรอกข้อมูล -->
         <div id="formSection" class="card p-4 mx-auto shadow-sm" style="max-width: 750px; display: none;">
             <h4 class="mb-4 text-center text-success fw-bold"><i class="fas fa-clipboard-check me-2"></i> แบบบันทึกข้อมูลขยะรีไซเคิล</h4>
             <form id="recycleForm">
@@ -139,10 +205,8 @@
                         </select>
                     </div>
                 </div>
-                
                 <hr class="my-4">
                 <h5 class="fw-bold mb-3 text-primary">ปริมาณขยะ (กิโลกรัม)</h5>
-                
                 <div class="row g-3">
                     <div class="col-6 col-md-4"><label>กระดาษ</label><input type="number" id="v1" class="form-control" value="0" step="0.01"></div>
                     <div class="col-6 col-md-4"><label>พลาสติก</label><input type="number" id="v2" class="form-control" value="0" step="0.01"></div>
@@ -160,251 +224,249 @@
 </div>
 
 <!-- ================= Scripts ================= -->
-<!-- jQuery (จำเป็นสำหรับ DataTables) -->
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- DataTables JS สำหรับการแบ่งหน้า, ค้นหา, เรียงลำดับ -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<!-- Chart.js สำหรับกราฟ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- SheetJS สำหรับ Export Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- SweetAlert2 สำหรับแจ้งเตือน -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // URL Web App จาก Google Apps Script ที่ให้มา
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjxKuVJIY4FKX2VRonxhLjheYcdCJjMnd6ebQxYozxYeECGnEZ_2GDhAZfhkfvqBn_4w/exec"; 
     
     let rawData = [];
-    let myDataTable = null; // เก็บ Instance ของ DataTable
-    let charts = {}; // เก็บ Instance ของ Chart
+    let filteredData = [];
+    let myDataTable = null;
+    let charts = {};
 
-    // จัดการการเปลี่ยนหน้า
+    const TYPE_NAMES = ['กระดาษ', 'พลาสติก', 'เหล็ก', 'โลหะผสม', 'แก้ว', 'อลูมิเนียม'];
+    const TYPE_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+    const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
     function showPage(id, element) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        
         document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active-tab'));
         if(element) element.classList.add('active-tab');
-        
-        if(id !== 'page3') fetchData();
     }
 
-    // แปลงวันที่ให้อยู่ในรูปแบบ DD/MM/YYYY (พ.ศ.) 
     function formatThaiDate(dateStr) {
         if (!dateStr) return "";
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return "";
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const yyyy = d.getFullYear() + 543; // แปลงเป็น พ.ศ.
-        return `${dd}/${mm}/${yyyy}`;
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
     }
 
-    // ดึงข้อมูลทั้งหมดจาก Google Sheet
+    // โหลดข้อมูลจาก Google Sheet
     function fetchData() {
         Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() }});
-        
         fetch(`${SCRIPT_URL}?action=getData`)
             .then(r => r.json())
             .then(res => {
-                rawData = res.data.slice(1); // ตัดหัวตารางออก
-                updateTable();
-                updateDashboard();
+                rawData = res.data.slice(1);
+                applyFilter(); // กรองและแสดงผลทันที
                 Swal.close();
             })
-            .catch(err => {
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อข้อมูลได้', 'error');
-            });
+            .catch(err => Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อข้อมูลได้', 'error'));
     }
 
-    // จัดการหน้าข้อมูลทั้งหมด (ตาราง)
+    // กรองข้อมูลตามวันที่
+    function applyFilter() {
+        const start = document.getElementById('filterStart').value;
+        const end = document.getElementById('filterEnd').value;
+        const startTime = start ? new Date(start).setHours(0,0,0,0) : null;
+        const endTime = end ? new Date(end).setHours(23,59,59,999) : null;
+
+        filteredData = rawData.filter(r => {
+            const rowTime = new Date(r[1]).getTime();
+            if (isNaN(rowTime)) return false;
+            if (startTime && rowTime < startTime) return false;
+            if (endTime && rowTime > endTime) return false;
+            return true;
+        });
+
+        updateTable();
+        updateDashboard();
+    }
+
+    // ล้างตัวกรอง
+    function clearFilter() {
+        document.getElementById('filterStart').value = '';
+        document.getElementById('filterEnd').value = '';
+        applyFilter();
+    }
+
+    // อัปเดตตารางหน้า 2
     function updateTable() {
-        // เคลียร์ DataTable เก่า (ถ้ามี)
-        if (myDataTable) {
-            myDataTable.destroy();
-        }
-        
+        if (myDataTable) myDataTable.destroy();
         const tbody = document.querySelector('#mainTable tbody');
-        tbody.innerHTML = rawData.map(r => {
-            const dateObj = new Date(r[1]);
-            const timestamp = isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
+        tbody.innerHTML = filteredData.map(r => {
+            const timestamp = new Date(r[1]).getTime() || 0;
             return `
                 <tr>
-                    <!-- ซ่อน Timestamp ไว้ใน data-sort เพื่อให้ DataTables เรียงลำดับวันที่ได้อย่างแม่นยำ -->
                     <td data-sort="${timestamp}">${formatThaiDate(r[1])}</td>
                     <td>${r[2]}</td>
-                    <td>${parseFloat(r[3]||0).toFixed(2)}</td>
-                    <td>${parseFloat(r[4]||0).toFixed(2)}</td>
-                    <td>${parseFloat(r[5]||0).toFixed(2)}</td>
-                    <td>${parseFloat(r[6]||0).toFixed(2)}</td>
-                    <td>${parseFloat(r[7]||0).toFixed(2)}</td>
-                    <td>${parseFloat(r[8]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[3]||0).toFixed(2)}</td><td>${parseFloat(r[4]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[5]||0).toFixed(2)}</td><td>${parseFloat(r[6]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[7]||0).toFixed(2)}</td><td>${parseFloat(r[8]||0).toFixed(2)}</td>
                 </tr>
             `;
         }).join('');
 
-        // เปิดใช้งาน DataTables
         myDataTable = $('#mainTable').DataTable({
-            "order": [[ 0, "desc" ]], // บังคับให้เรียงจากคอลัมน์แรก (วันที่) แบบล่าสุดขึ้นก่อน
-            "pageLength": 15, // จำนวนเริ่มต้น
-            "lengthMenu": [[15, 30, 50, 100, -1], [15, 30, 50, 100, "ทั้งหมด"]], // ตัวเลือกจำนวนแถว
-            "language": {
-                "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" // เมนูภาษาไทย
-            }
+            "order": [[ 0, "desc" ]],
+            "pageLength": 15,
+            "lengthMenu": [[15, 30, 50, 100, -1], [15, 30, 50, 100, "ทั้งหมด"]],
+            "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }
         });
     }
 
     // ประมวลผลและสร้าง Dashboard
     function updateDashboard() {
-        let sums = [0,0,0,0,0,0]; // ยอดรวมแยกประเภท
-        let monthlyData = {}; // เก็บข้อมูลรายเดือน { "YYYY-MM": total }
-        let fyData = {}; // เก็บข้อมูลปีงบประมาณ { "YYYY": total }
+        let sums = [0,0,0,0,0,0]; 
+        let monthlyData = {}; 
+        let fyData = {}; 
 
-        rawData.forEach(r => {
-            let date = new Date(r[1]);
-            if(isNaN(date.getTime())) return;
-
+        filteredData.forEach(r => {
+            let d = new Date(r[1]);
             let vals = [
-                parseFloat(r[3]) || 0, parseFloat(r[4]) || 0, 
-                parseFloat(r[5]) || 0, parseFloat(r[6]) || 0, 
-                parseFloat(r[7]) || 0, parseFloat(r[8]) || 0
+                parseFloat(r[3])||0, parseFloat(r[4])||0, parseFloat(r[5])||0, 
+                parseFloat(r[6])||0, parseFloat(r[7])||0, parseFloat(r[8])||0
             ];
-            let rowTotal = vals.reduce((a,b) => a+b, 0);
 
-            // 1. หาผลรวมประเภท
+            // รวมทั้งหมด
             vals.forEach((v,i) => sums[i] += v);
 
-            // 2. คำนวณรายเดือน
-            let monthKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
-            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + rowTotal;
+            // แยกรายเดือน
+            let monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            if (!monthlyData[monthKey]) monthlyData[monthKey] = [0,0,0,0,0,0];
+            vals.forEach((v,i) => monthlyData[monthKey][i] += v);
 
-            // 3. คำนวณปีงบประมาณ (ต.ค. = เดือน 9 ใน JS -> ปัดเป็นปีถัดไป)
-            let isNextFY = date.getMonth() >= 9;
-            let thaiYear = date.getFullYear() + 543;
-            let fy = isNextFY ? thaiYear + 1 : thaiYear;
-            fyData[fy] = (fyData[fy] || 0) + rowTotal;
+            // แยกปีงบประมาณ (ต.ค. = เดือน 9)
+            let isNextFY = d.getMonth() >= 9;
+            let fy = (d.getFullYear() + 543) + (isNextFY ? 1 : 0);
+            if (!fyData[fy]) fyData[fy] = [0,0,0,0,0,0];
+            vals.forEach((v,i) => fyData[fy][i] += v);
         });
 
-        // ------ เติมข้อมูลลงตารางสรุปผล ------
-        let totalAll = sums.reduce((a,b)=>a+b, 0);
-        document.getElementById('summaryRow').innerHTML = `
-            <td>${sums[0].toFixed(2)}</td><td>${sums[1].toFixed(2)}</td><td>${sums[2].toFixed(2)}</td>
-            <td>${sums[3].toFixed(2)}</td><td>${sums[4].toFixed(2)}</td><td>${sums[5].toFixed(2)}</td>
-            <td class="text-success fs-4">${totalAll.toFixed(2)}</td>
-        `;
+        // ================= กราฟที่ 1: ปีงบประมาณ (Stacked Bar) =================
+        let sortedFY = Object.keys(fyData).sort();
+        let datasetsFY = TYPE_NAMES.map((name, i) => ({
+            label: name, backgroundColor: TYPE_COLORS[i],
+            data: sortedFY.map(fy => fyData[fy][i])
+        }));
+        drawStackedBarChart('chartFY', sortedFY.map(fy => `ปีงบ ${fy}`), datasetsFY);
+        
+        // สร้างตาราง FY
+        const tFY = document.querySelector('#tableFY tbody');
+        tFY.innerHTML = sortedFY.map(fy => {
+            const vals = fyData[fy];
+            const total = vals.reduce((a,b)=>a+b,0);
+            return `<tr><td>ปีงบ ${fy}</td>${vals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}<td class="fw-bold bg-light">${total.toFixed(2)}</td></tr>`;
+        }).join('');
 
-        // ------ กราฟ 1: สัดส่วน (Doughnut) ------
-        drawChart('chartType', 'doughnut', 
-            ['กระดาษ', 'พลาสติก', 'เหล็ก', 'โลหะผสม', 'แก้ว', 'อลูมิเนียม'], 
-            [{ data: sums, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }]
-        );
-
-        // ------ กราฟ 2: รายเดือน (Bar) ------
+        // ================= กราฟที่ 2: รายเดือน (Stacked Bar) =================
         let sortedMonths = Object.keys(monthlyData).sort();
         let monthLabels = sortedMonths.map(m => {
-            let p = m.split('-');
-            let d = new Date(p[0], p[1]-1, 1);
-            return d.toLocaleDateString('th-TH', { month:'short', year:'2-digit' }); // เช่น ม.ค. 67
+            let [y, mo] = m.split('-');
+            return `${THAI_MONTHS[parseInt(mo)-1]} ${(parseInt(y)+543).toString().slice(-2)}`;
         });
-        let monthValues = sortedMonths.map(m => monthlyData[m]);
-        
-        drawChart('chartMonth', 'bar', monthLabels, 
-            [{ label: 'ปริมาณขยะรวม (กก.)', data: monthValues, backgroundColor: '#36A2EB' }]
-        );
+        let datasetsMonth = TYPE_NAMES.map((name, i) => ({
+            label: name, backgroundColor: TYPE_COLORS[i],
+            data: sortedMonths.map(m => monthlyData[m][i])
+        }));
+        drawStackedBarChart('chartMonth', monthLabels, datasetsMonth);
 
-        // ------ กราฟ 3: ปีงบประมาณ (Bar) ------
-        let sortedFY = Object.keys(fyData).sort();
-        let fyLabels = sortedFY.map(fy => `ปีงบ ${fy}`);
-        let fyValues = sortedFY.map(fy => fyData[fy]);
+        // สร้างตาราง Month
+        const tMonth = document.querySelector('#tableMonth tbody');
+        tMonth.innerHTML = sortedMonths.map((m, idx) => {
+            const vals = monthlyData[m];
+            const total = vals.reduce((a,b)=>a+b,0);
+            return `<tr><td>${monthLabels[idx]}</td>${vals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}<td class="fw-bold bg-light">${total.toFixed(2)}</td></tr>`;
+        }).reverse().join(''); // เรียงเดือนล่าสุดไว้บนสุดในตาราง
 
-        drawChart('chartFY', 'bar', fyLabels, 
-            [{ label: 'ปริมาณขยะรวม (กก.)', data: fyValues, backgroundColor: '#FFCE56' }]
-        );
+        // ================= กราฟที่ 3: สัดส่วนและผลรวม =================
+        if(charts['chartType']) charts['chartType'].destroy();
+        charts['chartType'] = new Chart(document.getElementById('chartType'), {
+            type: 'doughnut',
+            data: { labels: TYPE_NAMES, datasets: [{ data: sums, backgroundColor: TYPE_COLORS }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+
+        let totalAll = sums.reduce((a,b)=>a+b,0);
+        document.getElementById('summaryTableBody').innerHTML = TYPE_NAMES.map((name, i) => `
+            <tr><td class="text-start"><span style="color:${TYPE_COLORS[i]}">●</span> ${name}</td><td>${sums[i].toFixed(2)}</td></tr>
+        `).join('');
+        document.getElementById('grandTotalText').innerText = totalAll.toFixed(2);
     }
 
-    // ฟังก์ชันวาดกราฟ (ทำลายกราฟเก่าก่อนวาดใหม่)
-    function drawChart(canvasId, type, labels, datasets) {
+    // ฟังก์ชันวาด Stacked Bar Chart
+    function drawStackedBarChart(canvasId, labels, datasets) {
         if(charts[canvasId]) charts[canvasId].destroy();
         charts[canvasId] = new Chart(document.getElementById(canvasId), {
-            type: type,
+            type: 'bar',
             data: { labels: labels, datasets: datasets },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true }, // นำแท่งมาซ้อนกัน
+                    y: { stacked: true, beginAtZero: true }
+                },
+                plugins: { tooltip: { mode: 'index', intersect: false } }
+            }
         });
     }
 
-    // ฟังก์ชันเข้าสู่ระบบ
+    // เข้าสู่ระบบ
     function checkAuth() {
         const pass = document.getElementById('passInput').value;
-        if(!pass) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสผ่าน', 'warning');
-        
-        Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => { Swal.showLoading() }});
+        if(!pass) return;
+        Swal.fire({ title: 'ตรวจสอบ...', didOpen: () => Swal.showLoading() });
         fetch(`${SCRIPT_URL}?action=checkPass&password=${pass}`)
             .then(r => r.json()).then(res => {
                 if(res.status) {
                     Swal.close();
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('formSection').style.display = 'block';
-                } else {
-                    Swal.fire('เกิดข้อผิดพลาด', 'รหัสผ่านไม่ถูกต้อง', 'error');
-                }
+                } else Swal.fire('ผิดพลาด', 'รหัสผ่านไม่ถูกต้อง', 'error');
             });
     }
 
-    // ฟังก์ชันบันทึกข้อมูล
+    // บันทึกข้อมูล
     function saveData() {
-        const dateVal = document.getElementById('date').value;
-        const nameVal = document.getElementById('name').value;
-        
-        if(!dateVal || !nameVal) return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่และชื่อผู้บันทึก', 'warning');
-
-        const btn = document.getElementById('saveBtn');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
-        btn.disabled = true;
-
         const payload = {
-            date: dateVal, name: nameVal,
-            paper: document.getElementById('v1').value,
-            plastic: document.getElementById('v2').value,
-            iron: document.getElementById('v3').value,
-            alloy: document.getElementById('v4').value,
-            glass: document.getElementById('v5').value,
-            aluminum: document.getElementById('v6').value
+            date: document.getElementById('date').value, name: document.getElementById('name').value,
+            paper: document.getElementById('v1').value, plastic: document.getElementById('v2').value,
+            iron: document.getElementById('v3').value, alloy: document.getElementById('v4').value,
+            glass: document.getElementById('v5').value, aluminum: document.getElementById('v6').value
         };
-
+        if(!payload.date || !payload.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่และชื่อ', 'warning');
+        
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true; btn.innerHTML = 'กำลังบันทึก...';
+        
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(r => r.json()).then(res => {
-                Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+                Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success');
                 document.getElementById('recycleForm').reset();
-                btn.innerHTML = '<i class="fas fa-save me-2"></i> บันทึกข้อมูล';
-                btn.disabled = false;
-            }).catch(err => {
-                Swal.fire('เกิดข้อผิดพลาด', 'บันทึกข้อมูลไม่สำเร็จ', 'error');
-                btn.disabled = false;
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i> บันทึกข้อมูล';
+                fetchData(); // ดึงข้อมูลใหม่เพื่ออัปเดตกราฟ
             });
     }
 
-    // ส่งออกไฟล์ Excel
     function exportToExcel() {
-        const ws = XLSX.utils.json_to_sheet(rawData.map(r => ({
-            "วันที่": formatThaiDate(r[1]),
-            "ผู้บันทึก": r[2],
-            "กระดาษ (กก.)": parseFloat(r[3]||0),
-            "พลาสติก (กก.)": parseFloat(r[4]||0),
-            "เหล็ก (กก.)": parseFloat(r[5]||0),
-            "โลหะผสม (กก.)": parseFloat(r[6]||0),
-            "แก้ว (กก.)": parseFloat(r[7]||0),
-            "อลูมิเนียม (กก.)": parseFloat(r[8]||0)
+        const ws = XLSX.utils.json_to_sheet(filteredData.map(r => ({
+            "วันที่": formatThaiDate(r[1]), "ผู้บันทึก": r[2],
+            "กระดาษ": parseFloat(r[3]||0), "พลาสติก": parseFloat(r[4]||0),
+            "เหล็ก": parseFloat(r[5]||0), "โลหะผสม": parseFloat(r[6]||0),
+            "แก้ว": parseFloat(r[7]||0), "อลูมิเนียม": parseFloat(r[8]||0)
         })));
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "RecycleData");
-        XLSX.writeFile(wb, "ข้อมูลขยะรีไซเคิล_รพ.ไทรโยค.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, "Recycle_Data.xlsx");
     }
 
-    // โหลดข้อมูลทันทีเมื่อเปิดหน้าเว็บ
     window.onload = fetchData;
 </script>
 </body>
