@@ -29,7 +29,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="#"><i class="fas fa-recycle me-2"></i>ข้อมูลขยะรีไซเคิล - โรงพยาบาลไทรโยค</a>
+        <a class="navbar-brand fw-bold" href="#"><i class="fas fa-recycle me-2"></i> ข้อมูลขยะรีไซเคิล - โรงพยาบาลไทรโยค</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -80,7 +80,7 @@
                     <div class="chart-container mb-3"><canvas id="chartFY"></canvas></div>
                     <div class="text-center">
                         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#tableFYCollapse">
-                            <i class="fas fa-table me-1"></i> Show/Hide
+                            <i class="fas fa-table me-1"></i> show/hide
                         </button>
                     </div>
                     <div class="collapse mt-3" id="tableFYCollapse">
@@ -105,7 +105,7 @@
                     <div class="chart-container mb-3"><canvas id="chartMonth"></canvas></div>
                     <div class="text-center">
                         <button class="btn btn-outline-info btn-sm" data-bs-toggle="collapse" data-bs-target="#tableMonthCollapse">
-                            <i class="fas fa-table me-1"></i> Show/Hide
+                            <i class="fas fa-table me-1"></i> show/hide
                         </button>
                     </div>
                     <div class="collapse mt-3" id="tableMonthCollapse">
@@ -175,7 +175,6 @@
     </div>
 
     <!-- ================= หน้า 3: ฟอร์มกรอกข้อมูล ================= -->
-    <!-- (เหมือนเดิม ไม่มีการเปลี่ยนแปลงในส่วนนี้) -->
     <div id="page3" class="page">
         <div id="loginSection" class="card p-5 mx-auto shadow-sm" style="max-width: 450px;">
             <div class="text-center mb-4">
@@ -241,7 +240,8 @@
     let charts = {};
 
     const TYPE_NAMES = ['กระดาษ', 'พลาสติก', 'เหล็ก', 'โลหะผสม', 'แก้ว', 'อลูมิเนียม'];
-    const TYPE_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+    // 🎨 อัปเดตสีตามที่ผู้ใช้แนะนำ
+    const TYPE_COLORS = ['#0D6EFD', '#FFC107', '#6C757D', '#ADB5BD', '#198754', '#343A40'];
     const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
     function showPage(id, element) {
@@ -265,7 +265,7 @@
             .then(r => r.json())
             .then(res => {
                 rawData = res.data.slice(1);
-                applyFilter(); // กรองและแสดงผลทันที
+                applyFilter();
                 Swal.close();
             })
             .catch(err => Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อข้อมูลได้', 'error'));
@@ -290,7 +290,6 @@
         updateDashboard();
     }
 
-    // ล้างตัวกรอง
     function clearFilter() {
         document.getElementById('filterStart').value = '';
         document.getElementById('filterEnd').value = '';
@@ -335,22 +334,19 @@
                 parseFloat(r[6])||0, parseFloat(r[7])||0, parseFloat(r[8])||0
             ];
 
-            // รวมทั้งหมด
             vals.forEach((v,i) => sums[i] += v);
 
-            // แยกรายเดือน
             let monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
             if (!monthlyData[monthKey]) monthlyData[monthKey] = [0,0,0,0,0,0];
             vals.forEach((v,i) => monthlyData[monthKey][i] += v);
 
-            // แยกปีงบประมาณ (ต.ค. = เดือน 9)
             let isNextFY = d.getMonth() >= 9;
             let fy = (d.getFullYear() + 543) + (isNextFY ? 1 : 0);
             if (!fyData[fy]) fyData[fy] = [0,0,0,0,0,0];
             vals.forEach((v,i) => fyData[fy][i] += v);
         });
 
-        // ================= กราฟที่ 1: ปีงบประมาณ (Stacked Bar) =================
+        // ================= กราฟที่ 1 =================
         let sortedFY = Object.keys(fyData).sort();
         let datasetsFY = TYPE_NAMES.map((name, i) => ({
             label: name, backgroundColor: TYPE_COLORS[i],
@@ -358,7 +354,6 @@
         }));
         drawStackedBarChart('chartFY', sortedFY.map(fy => `ปีงบ ${fy}`), datasetsFY);
         
-        // สร้างตาราง FY
         const tFY = document.querySelector('#tableFY tbody');
         tFY.innerHTML = sortedFY.map(fy => {
             const vals = fyData[fy];
@@ -366,7 +361,7 @@
             return `<tr><td>ปีงบ ${fy}</td>${vals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}<td class="fw-bold bg-light">${total.toFixed(2)}</td></tr>`;
         }).join('');
 
-        // ================= กราฟที่ 2: รายเดือน (Stacked Bar) =================
+        // ================= กราฟที่ 2 =================
         let sortedMonths = Object.keys(monthlyData).sort();
         let monthLabels = sortedMonths.map(m => {
             let [y, mo] = m.split('-');
@@ -378,15 +373,14 @@
         }));
         drawStackedBarChart('chartMonth', monthLabels, datasetsMonth);
 
-        // สร้างตาราง Month
         const tMonth = document.querySelector('#tableMonth tbody');
         tMonth.innerHTML = sortedMonths.map((m, idx) => {
             const vals = monthlyData[m];
             const total = vals.reduce((a,b)=>a+b,0);
             return `<tr><td>${monthLabels[idx]}</td>${vals.map(v => `<td>${v.toFixed(2)}</td>`).join('')}<td class="fw-bold bg-light">${total.toFixed(2)}</td></tr>`;
-        }).reverse().join(''); // เรียงเดือนล่าสุดไว้บนสุดในตาราง
+        }).reverse().join('');
 
-        // ================= กราฟที่ 3: สัดส่วนและผลรวม =================
+        // ================= กราฟที่ 3 =================
         if(charts['chartType']) charts['chartType'].destroy();
         charts['chartType'] = new Chart(document.getElementById('chartType'), {
             type: 'doughnut',
@@ -401,7 +395,6 @@
         document.getElementById('grandTotalText').innerText = totalAll.toFixed(2);
     }
 
-    // ฟังก์ชันวาด Stacked Bar Chart
     function drawStackedBarChart(canvasId, labels, datasets) {
         if(charts[canvasId]) charts[canvasId].destroy();
         charts[canvasId] = new Chart(document.getElementById(canvasId), {
@@ -409,16 +402,12 @@
             data: { labels: labels, datasets: datasets },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { stacked: true }, // นำแท่งมาซ้อนกัน
-                    y: { stacked: true, beginAtZero: true }
-                },
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
                 plugins: { tooltip: { mode: 'index', intersect: false } }
             }
         });
     }
 
-    // เข้าสู่ระบบ
     function checkAuth() {
         const pass = document.getElementById('passInput').value;
         if(!pass) return;
@@ -433,7 +422,6 @@
             });
     }
 
-    // บันทึกข้อมูล
     function saveData() {
         const payload = {
             date: document.getElementById('date').value, name: document.getElementById('name').value,
@@ -451,7 +439,7 @@
                 Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success');
                 document.getElementById('recycleForm').reset();
                 btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i> บันทึกข้อมูล';
-                fetchData(); // ดึงข้อมูลใหม่เพื่ออัปเดตกราฟ
+                fetchData();
             });
     }
 
