@@ -3,95 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recycle System - โรงพยาบาลไทรโยค</title>
+    <title>ระบบจัดการขยะรีไซเคิล - โรงพยาบาลไทรโยค</title>
+    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS สำหรับตาราง -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; }
-        .navbar { background: linear-gradient(135deg, #1e7e34, #2d6a4f); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; transition: 0.3s; }
-        .nav-link { font-weight: 600; cursor: pointer; }
-        .btn-primary { background-color: #2d6a4f; border: none; border-radius: 10px; }
-        .btn-primary:hover { background-color: #1b4332; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
+        .navbar { background: linear-gradient(135deg, #198754, #146c43); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .nav-link { font-weight: 600; cursor: pointer; color: rgba(255,255,255,0.85) !important; }
+        .nav-link:hover, .nav-link.active-tab { color: #fff !important; text-decoration: underline; text-underline-offset: 5px; }
         .page { display: none; padding-top: 20px; }
-        .active { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .chart-container { position: relative; height: 300px; width: 100%; }
-        .table-responsive { border-radius: 15px; background: white; padding: 15px; }
+        /* แต่ง DataTables ให้สวยเข้ากับ Bootstrap */
+        .dataTables_wrapper .row { margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="#"><i class="fas fa-recycle me-2"></i> รพ.ไทรโยค</a>
+        <a class="navbar-brand fw-bold" href="#"><i class="fas fa-recycle me-2"></i> รพ.ไทรโยค</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" onclick="showPage('page1')"><i class="fas fa-chart-line me-1"></i> Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="showPage('page2')"><i class="fas fa-list me-1"></i> ข้อมูลทั้งหมด</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="showPage('page3')"><i class="fas fa-edit me-1"></i> บันทึกข้อมูล</a></li>
+                <li class="nav-item"><a class="nav-link active-tab" id="tab1" onclick="showPage('page1', this)"><i class="fas fa-chart-pie me-1"></i> Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" id="tab2" onclick="showPage('page2', this)"><i class="fas fa-table me-1"></i> ข้อมูลทั้งหมด</a></li>
+                <li class="nav-item"><a class="nav-link" id="tab3" onclick="showPage('page3', this)"><i class="fas fa-edit me-1"></i> บันทึกข้อมูล</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <div class="container my-4">
+    <!-- ================= หน้า 1: Dashboard ================= -->
     <div id="page1" class="page active">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3><i class="fas fa-tachometer-alt text-success me-2"></i>สรุปผลภาพรวม</h3>
-            <button class="btn btn-outline-success btn-sm" onclick="fetchData()"><i class="fas fa-sync-alt"></i> รีเฟรช</button>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold"><i class="fas fa-tachometer-alt text-success me-2"></i> สรุปผลภาพรวม</h3>
+            <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="fetchData()">
+                <i class="fas fa-sync-alt me-1"></i> รีเฟรชข้อมูล
+            </button>
         </div>
+        
+        <!-- กราฟ 3 ส่วน -->
         <div class="row">
-            <div class="col-md-4"><div class="card p-3"><h6 class="text-muted">แยกประเภทตามปีงบประมาณ</h6><div class="chart-container"><canvas id="chartFY"></canvas></div></div></div>
-            <div class="col-md-4"><div class="card p-3"><h6 class="text-muted">แยกประเภทรายเดือน</h6><div class="chart-container"><canvas id="chartMonth"></canvas></div></div></div>
-            <div class="col-md-4"><div class="card p-3"><h6 class="text-muted">สัดส่วนขยะรวม</h6><div class="chart-container"><canvas id="chartType"></canvas></div></div></div>
+            <div class="col-lg-4 col-md-12"><div class="card p-3"><h6 class="text-center fw-bold">สัดส่วนแยกตามประเภท (กก.)</h6><div class="chart-container"><canvas id="chartType"></canvas></div></div></div>
+            <div class="col-lg-4 col-md-12"><div class="card p-3"><h6 class="text-center fw-bold">ปริมาณขยะแยกรายเดือน (กก.)</h6><div class="chart-container"><canvas id="chartMonth"></canvas></div></div></div>
+            <div class="col-lg-4 col-md-12"><div class="card p-3"><h6 class="text-center fw-bold">ปริมาณขยะตามปีงบประมาณ (กก.)</h6><div class="chart-container"><canvas id="chartFY"></canvas></div></div></div>
         </div>
-    </div>
 
-    <div id="page2" class="page">
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4><i class="fas fa-database text-primary me-2"></i>ข้อมูลรายละเอียด</h4>
-                <button class="btn btn-success" onclick="exportToExcel()"><i class="fas fa-file-excel me-1"></i> ส่งออก Excel</button>
-            </div>
+        <!-- ตารางสรุปผลรวม -->
+        <div class="card p-3 mt-2 border-top border-success border-4">
+            <h5 class="text-center fw-bold text-success mb-3"><i class="fas fa-calculator me-2"></i> ตารางสรุปผลรวมทั้งหมด</h5>
             <div class="table-responsive">
-                <table class="table table-hover" id="mainTable">
-                    <thead class="table-light">
+                <table class="table table-bordered text-center align-middle mb-0">
+                    <thead class="table-success">
                         <tr>
-                            <th>วันที่</th><th>ผู้บันทึก</th><th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th><th>โลหะ</th><th>แก้ว</th><th>อลูฯ</th>
+                            <th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th>
+                            <th>โลหะผสม</th><th>แก้ว</th><th>อลูมิเนียม</th>
+                            <th class="bg-success text-white">รวมทั้งสิ้น (กก.)</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <tr id="summaryRow" class="fs-5 fw-bold text-dark">
+                            <!-- ข้อมูลจะถูกเติมด้วย Javascript -->
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="page3" class="page">
-        <div id="loginSection" class="card p-5 mx-auto shadow-lg" style="max-width: 450px;">
-            <div class="text-center mb-4">
-                <i class="fas fa-lock fa-3x text-success mb-3"></i>
-                <h4>เข้าสู่ระบบเพื่อบันทึกข้อมูล</h4>
+    <!-- ================= หน้า 2: ข้อมูลทั้งหมด ================= -->
+    <div id="page2" class="page">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold"><i class="fas fa-database text-primary me-2"></i> ฐานข้อมูลรายละเอียด</h4>
+                <button class="btn btn-success rounded-pill px-3" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel me-1"></i> ส่งออก Excel
+                </button>
             </div>
-            <input type="password" id="passInput" class="form-control mb-3 text-center" placeholder="ใส่รหัสผ่าน 5 หลัก">
-            <button class="btn btn-primary w-100 py-2" onclick="checkAuth()">ยืนยัน</button>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped w-100" id="mainTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>วันที่บันทึก</th><th>ผู้บันทึก</th>
+                            <th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th>
+                            <th>โลหะ</th><th>แก้ว</th><th>อลูฯ</th>
+                        </tr>
+                    </thead>
+                    <tbody><!-- Data will be loaded here --></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= หน้า 3: ฟอร์มกรอกข้อมูล ================= -->
+    <div id="page3" class="page">
+        <!-- ส่วนเช็ครหัสผ่าน -->
+        <div id="loginSection" class="card p-5 mx-auto shadow-sm" style="max-width: 450px;">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-lock fa-4x text-success mb-3"></i>
+                <h4 class="fw-bold">เข้าสู่ระบบเพื่อบันทึกข้อมูล</h4>
+            </div>
+            <input type="password" id="passInput" class="form-control form-control-lg mb-3 text-center" placeholder="ใส่รหัสผ่าน">
+            <button class="btn btn-success btn-lg w-100 rounded-pill" onclick="checkAuth()">ยืนยัน</button>
         </div>
 
-        <div id="formSection" class="card p-4 mx-auto shadow-lg" style="max-width: 700px; display: none;">
-            <h4 class="mb-4 text-center text-success"><i class="fas fa-clipboard-list me-2"></i>แบบบันทึกข้อมูลขยะรีไซเคิล</h4>
+        <!-- ฟอร์มกรอกข้อมูล -->
+        <div id="formSection" class="card p-4 mx-auto shadow-sm" style="max-width: 750px; display: none;">
+            <h4 class="mb-4 text-center text-success fw-bold"><i class="fas fa-clipboard-check me-2"></i> แบบบันทึกข้อมูลขยะรีไซเคิล</h4>
             <form id="recycleForm">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">วันที่</label>
+                        <label class="form-label fw-bold">วันที่</label>
                         <input type="date" id="date" class="form-control" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">ชื่อผู้บันทึก</label>
+                        <label class="form-label fw-bold">ชื่อผู้บันทึก</label>
                         <select id="name" class="form-select" required>
                             <option value="">-- เลือกชื่อ --</option>
                             <option>นางสาวกชพร บุณยเลขา</option><option>นางสาววาสนา เกตุบุตร</option>
@@ -100,113 +138,235 @@
                             <option>นางสาวอรพินท์ ยินดี</option><option>นางสาวกนกกร อ่อนเยียะ</option>
                         </select>
                     </div>
-                    <div class="col-6 col-md-4">
-                        <label>กระดาษ (กก.)</label><input type="number" id="v1" class="form-control" value="0" step="0.01">
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label>พลาสติก (กก.)</label><input type="number" id="v2" class="form-control" value="0" step="0.01">
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label>เหล็ก (กก.)</label><input type="number" id="v3" class="form-control" value="0" step="0.01">
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label>โลหะผสม (กก.)</label><input type="number" id="v4" class="form-control" value="0" step="0.01">
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label>แก้ว (กก.)</label><input type="number" id="v5" class="form-control" value="0" step="0.01">
-                    </div>
-                    <div class="col-6 col-md-4">
-                        <label>อลูมิเนียม (กก.)</label><input type="number" id="v6" class="form-control" value="0" step="0.01">
-                    </div>
                 </div>
-                <button type="button" class="btn btn-primary w-100 mt-4 py-2" id="saveBtn" onclick="saveData()">
-                    <i class="fas fa-save me-2"></i>บันทึกข้อมูล
+                
+                <hr class="my-4">
+                <h5 class="fw-bold mb-3 text-primary">ปริมาณขยะ (กิโลกรัม)</h5>
+                
+                <div class="row g-3">
+                    <div class="col-6 col-md-4"><label>กระดาษ</label><input type="number" id="v1" class="form-control" value="0" step="0.01"></div>
+                    <div class="col-6 col-md-4"><label>พลาสติก</label><input type="number" id="v2" class="form-control" value="0" step="0.01"></div>
+                    <div class="col-6 col-md-4"><label>เหล็ก</label><input type="number" id="v3" class="form-control" value="0" step="0.01"></div>
+                    <div class="col-6 col-md-4"><label>โลหะผสม</label><input type="number" id="v4" class="form-control" value="0" step="0.01"></div>
+                    <div class="col-6 col-md-4"><label>แก้ว</label><input type="number" id="v5" class="form-control" value="0" step="0.01"></div>
+                    <div class="col-6 col-md-4"><label>อลูมิเนียม</label><input type="number" id="v6" class="form-control" value="0" step="0.01"></div>
+                </div>
+                <button type="button" class="btn btn-success btn-lg w-100 mt-4 rounded-pill shadow-sm" id="saveBtn" onclick="saveData()">
+                    <i class="fas fa-save me-2"></i> บันทึกข้อมูล
                 </button>
             </form>
         </div>
     </div>
 </div>
 
+<!-- ================= Scripts ================= -->
+<!-- jQuery (จำเป็นสำหรับ DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables JS สำหรับการแบ่งหน้า, ค้นหา, เรียงลำดับ -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<!-- Chart.js สำหรับกราฟ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- SheetJS สำหรับ Export Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- SweetAlert2 สำหรับแจ้งเตือน -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    // URL Web App จาก Google Apps Script ที่ให้มา
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjxKuVJIY4FKX2VRonxhLjheYcdCJjMnd6ebQxYozxYeECGnEZ_2GDhAZfhkfvqBn_4w/exec"; 
+    
     let rawData = [];
+    let myDataTable = null; // เก็บ Instance ของ DataTable
+    let charts = {}; // เก็บ Instance ของ Chart
 
-    function showPage(id) {
+    // จัดการการเปลี่ยนหน้า
+    function showPage(id, element) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        
+        document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active-tab'));
+        if(element) element.classList.add('active-tab');
+        
         if(id !== 'page3') fetchData();
     }
 
+    // แปลงวันที่ให้อยู่ในรูปแบบ DD/MM/YYYY (พ.ศ.) 
+    function formatThaiDate(dateStr) {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear() + 543; // แปลงเป็น พ.ศ.
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    // ดึงข้อมูลทั้งหมดจาก Google Sheet
+    function fetchData() {
+        Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() }});
+        
+        fetch(`${SCRIPT_URL}?action=getData`)
+            .then(r => r.json())
+            .then(res => {
+                rawData = res.data.slice(1); // ตัดหัวตารางออก
+                updateTable();
+                updateDashboard();
+                Swal.close();
+            })
+            .catch(err => {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อข้อมูลได้', 'error');
+            });
+    }
+
+    // จัดการหน้าข้อมูลทั้งหมด (ตาราง)
+    function updateTable() {
+        // เคลียร์ DataTable เก่า (ถ้ามี)
+        if (myDataTable) {
+            myDataTable.destroy();
+        }
+        
+        const tbody = document.querySelector('#mainTable tbody');
+        tbody.innerHTML = rawData.map(r => {
+            const dateObj = new Date(r[1]);
+            const timestamp = isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
+            return `
+                <tr>
+                    <!-- ซ่อน Timestamp ไว้ใน data-sort เพื่อให้ DataTables เรียงลำดับวันที่ได้อย่างแม่นยำ -->
+                    <td data-sort="${timestamp}">${formatThaiDate(r[1])}</td>
+                    <td>${r[2]}</td>
+                    <td>${parseFloat(r[3]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[4]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[5]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[6]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[7]||0).toFixed(2)}</td>
+                    <td>${parseFloat(r[8]||0).toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // เปิดใช้งาน DataTables
+        myDataTable = $('#mainTable').DataTable({
+            "order": [[ 0, "desc" ]], // บังคับให้เรียงจากคอลัมน์แรก (วันที่) แบบล่าสุดขึ้นก่อน
+            "pageLength": 15, // จำนวนเริ่มต้น
+            "lengthMenu": [[15, 30, 50, 100, -1], [15, 30, 50, 100, "ทั้งหมด"]], // ตัวเลือกจำนวนแถว
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" // เมนูภาษาไทย
+            }
+        });
+    }
+
+    // ประมวลผลและสร้าง Dashboard
+    function updateDashboard() {
+        let sums = [0,0,0,0,0,0]; // ยอดรวมแยกประเภท
+        let monthlyData = {}; // เก็บข้อมูลรายเดือน { "YYYY-MM": total }
+        let fyData = {}; // เก็บข้อมูลปีงบประมาณ { "YYYY": total }
+
+        rawData.forEach(r => {
+            let date = new Date(r[1]);
+            if(isNaN(date.getTime())) return;
+
+            let vals = [
+                parseFloat(r[3]) || 0, parseFloat(r[4]) || 0, 
+                parseFloat(r[5]) || 0, parseFloat(r[6]) || 0, 
+                parseFloat(r[7]) || 0, parseFloat(r[8]) || 0
+            ];
+            let rowTotal = vals.reduce((a,b) => a+b, 0);
+
+            // 1. หาผลรวมประเภท
+            vals.forEach((v,i) => sums[i] += v);
+
+            // 2. คำนวณรายเดือน
+            let monthKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + rowTotal;
+
+            // 3. คำนวณปีงบประมาณ (ต.ค. = เดือน 9 ใน JS -> ปัดเป็นปีถัดไป)
+            let isNextFY = date.getMonth() >= 9;
+            let thaiYear = date.getFullYear() + 543;
+            let fy = isNextFY ? thaiYear + 1 : thaiYear;
+            fyData[fy] = (fyData[fy] || 0) + rowTotal;
+        });
+
+        // ------ เติมข้อมูลลงตารางสรุปผล ------
+        let totalAll = sums.reduce((a,b)=>a+b, 0);
+        document.getElementById('summaryRow').innerHTML = `
+            <td>${sums[0].toFixed(2)}</td><td>${sums[1].toFixed(2)}</td><td>${sums[2].toFixed(2)}</td>
+            <td>${sums[3].toFixed(2)}</td><td>${sums[4].toFixed(2)}</td><td>${sums[5].toFixed(2)}</td>
+            <td class="text-success fs-4">${totalAll.toFixed(2)}</td>
+        `;
+
+        // ------ กราฟ 1: สัดส่วน (Doughnut) ------
+        drawChart('chartType', 'doughnut', 
+            ['กระดาษ', 'พลาสติก', 'เหล็ก', 'โลหะผสม', 'แก้ว', 'อลูมิเนียม'], 
+            [{ data: sums, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }]
+        );
+
+        // ------ กราฟ 2: รายเดือน (Bar) ------
+        let sortedMonths = Object.keys(monthlyData).sort();
+        let monthLabels = sortedMonths.map(m => {
+            let p = m.split('-');
+            let d = new Date(p[0], p[1]-1, 1);
+            return d.toLocaleDateString('th-TH', { month:'short', year:'2-digit' }); // เช่น ม.ค. 67
+        });
+        let monthValues = sortedMonths.map(m => monthlyData[m]);
+        
+        drawChart('chartMonth', 'bar', monthLabels, 
+            [{ label: 'ปริมาณขยะรวม (กก.)', data: monthValues, backgroundColor: '#36A2EB' }]
+        );
+
+        // ------ กราฟ 3: ปีงบประมาณ (Bar) ------
+        let sortedFY = Object.keys(fyData).sort();
+        let fyLabels = sortedFY.map(fy => `ปีงบ ${fy}`);
+        let fyValues = sortedFY.map(fy => fyData[fy]);
+
+        drawChart('chartFY', 'bar', fyLabels, 
+            [{ label: 'ปริมาณขยะรวม (กก.)', data: fyValues, backgroundColor: '#FFCE56' }]
+        );
+    }
+
+    // ฟังก์ชันวาดกราฟ (ทำลายกราฟเก่าก่อนวาดใหม่)
+    function drawChart(canvasId, type, labels, datasets) {
+        if(charts[canvasId]) charts[canvasId].destroy();
+        charts[canvasId] = new Chart(document.getElementById(canvasId), {
+            type: type,
+            data: { labels: labels, datasets: datasets },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // ฟังก์ชันเข้าสู่ระบบ
     function checkAuth() {
         const pass = document.getElementById('passInput').value;
+        if(!pass) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสผ่าน', 'warning');
+        
+        Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => { Swal.showLoading() }});
         fetch(`${SCRIPT_URL}?action=checkPass&password=${pass}`)
             .then(r => r.json()).then(res => {
                 if(res.status) {
+                    Swal.close();
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('formSection').style.display = 'block';
                 } else {
-                    Swal.fire('รหัสผ่านไม่ถูกต้อง', '', 'error');
+                    Swal.fire('เกิดข้อผิดพลาด', 'รหัสผ่านไม่ถูกต้อง', 'error');
                 }
             });
     }
 
-    function fetchData() {
-        fetch(`${SCRIPT_URL}?action=getData`)
-            .then(r => r.json()).then(res => {
-                rawData = res.data.slice(1);
-                updateDashboard();
-                updateTable();
-            });
-    }
-
-    function updateTable() {
-        const tbody = document.querySelector('#mainTable tbody');
-        tbody.innerHTML = rawData.map(r => `
-            <tr>
-                <td>${new Date(r[1]).toLocaleDateString('th-TH')}</td>
-                <td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td>
-            </tr>
-        `).reverse().join('');
-    }
-
-    function exportToExcel() {
-        const ws = XLSX.utils.json_to_sheet(rawData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "RecycleData");
-        XLSX.writeFile(wb, "Recycle_SaiYok_Hospital.xlsx");
-    }
-
-    function updateDashboard() {
-        const ctxType = document.getElementById('chartType').getContext('2d');
-        const sums = [0,0,0,0,0,0];
-        rawData.forEach(r => {
-            for(let i=0; i<6; i++) sums[i] += parseFloat(r[i+3] || 0);
-        });
-
-        if(window.myChart) window.myChart.destroy();
-        window.myChart = new Chart(ctxType, {
-            type: 'doughnut',
-            data: {
-                labels: ['กระดาษ', 'พลาสติก', 'เหล็ก', 'โลหะผสม', 'แก้ว', 'อลูมิเนียม'],
-                datasets: [{ data: sums, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-        
-        // (ฟังก์ชันกราฟอื่นๆ แยกตามเดือนและปีงบประมาณ สามารถเพิ่ม logic เพิ่มเติมได้ที่นี่)
-    }
-
+    // ฟังก์ชันบันทึกข้อมูล
     function saveData() {
+        const dateVal = document.getElementById('date').value;
+        const nameVal = document.getElementById('name').value;
+        
+        if(!dateVal || !nameVal) return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่และชื่อผู้บันทึก', 'warning');
+
         const btn = document.getElementById('saveBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
         btn.disabled = true;
+
         const payload = {
-            date: document.getElementById('date').value,
-            name: document.getElementById('name').value,
+            date: dateVal, name: nameVal,
             paper: document.getElementById('v1').value,
             plastic: document.getElementById('v2').value,
             iron: document.getElementById('v3').value,
@@ -217,12 +377,34 @@
 
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(r => r.json()).then(res => {
-                Swal.fire('บันทึกสำเร็จ', '', 'success');
+                Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
                 document.getElementById('recycleForm').reset();
+                btn.innerHTML = '<i class="fas fa-save me-2"></i> บันทึกข้อมูล';
+                btn.disabled = false;
+            }).catch(err => {
+                Swal.fire('เกิดข้อผิดพลาด', 'บันทึกข้อมูลไม่สำเร็จ', 'error');
                 btn.disabled = false;
             });
     }
 
+    // ส่งออกไฟล์ Excel
+    function exportToExcel() {
+        const ws = XLSX.utils.json_to_sheet(rawData.map(r => ({
+            "วันที่": formatThaiDate(r[1]),
+            "ผู้บันทึก": r[2],
+            "กระดาษ (กก.)": parseFloat(r[3]||0),
+            "พลาสติก (กก.)": parseFloat(r[4]||0),
+            "เหล็ก (กก.)": parseFloat(r[5]||0),
+            "โลหะผสม (กก.)": parseFloat(r[6]||0),
+            "แก้ว (กก.)": parseFloat(r[7]||0),
+            "อลูมิเนียม (กก.)": parseFloat(r[8]||0)
+        })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "RecycleData");
+        XLSX.writeFile(wb, "ข้อมูลขยะรีไซเคิล_รพ.ไทรโยค.xlsx");
+    }
+
+    // โหลดข้อมูลทันทีเมื่อเปิดหน้าเว็บ
     window.onload = fetchData;
 </script>
 </body>
