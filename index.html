@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ระบบจัดการขยะรีไซเคิล - โรงพยาบาลไทรโยค</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container">
+        <a class="navbar-brand" href="#">♻️ รพ.ไทรโยค Recycle</a>
+        <div class="navbar-nav">
+            <a class="nav-link" href="#" onclick="showPage('page1')">1. Dashboard</a>
+            <a class="nav-link" href="#" onclick="showPage('page2')">2. ข้อมูลทั้งหมด</a>
+            <a class="nav-link" href="#" onclick="showPage('page3')">3. บันทึกข้อมูล</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- หน้า 1: Dashboard -->
+    <div id="page1" class="page active">
+        <h3 class="mb-4">📊 Dashboard ขยะรีไซเคิล</h3>
+        <button class="btn btn-primary mb-3" onclick="loadData()">อัปเดตข้อมูล</button>
+        <div class="row">
+            <div class="col-md-4"><canvas id="chartOverall"></canvas></div>
+            <div class="col-md-4"><canvas id="chartMonth"></canvas></div>
+            <div class="col-md-4"><canvas id="chartYear"></canvas></div>
+        </div>
+    </div>
+
+    <!-- หน้า 2: ข้อมูลรายละเอียด -->
+    <div id="page2" class="page">
+        <h3 class="mb-4">📋 ข้อมูลรายละเอียดทั้งหมด</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="dataTable">
+                <thead class="table-success">
+                    <tr>
+                        <th>Timestamp</th><th>วันที่</th><th>ผู้บันทึก</th>
+                        <th>กระดาษ</th><th>พลาสติก</th><th>เหล็ก</th>
+                        <th>โลหะผสม</th><th>แก้ว</th><th>อลูมิเนียม</th>
+                    </tr>
+                </thead>
+                <tbody><!-- Data will be loaded here --></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- หน้า 3: ฟอร์มกรอกข้อมูล (ติดรหัสผ่าน) -->
+    <div id="page3" class="page">
+        <div id="passwordSection" class="card p-4 mx-auto" style="max-width: 400px;">
+            <h4 class="text-center">🔒 กรุณาใส่รหัสผ่าน</h4>
+            <input type="password" id="passInput" class="form-control mb-3" placeholder="รหัสผ่านเข้าหน้าฟอร์ม">
+            <button class="btn btn-success w-100" onclick="checkPassword()">เข้าสู่ระบบ</button>
+        </div>
+
+        <div id="formSection" style="display: none;" class="card p-4 mx-auto" style="max-width: 600px;">
+            <h3 class="mb-4 text-center">📝 ฟอร์มบันทึกข้อมูลขยะรีไซเคิล</h3>
+            <form id="recycleForm">
+                <div class="mb-3">
+                    <label>วันที่:</label>
+                    <input type="date" id="date" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>ชื่อผู้กรอก:</label>
+                    <select id="name" class="form-control" required>
+                        <option value="">-- เลือกชื่อ --</option>
+                        <option value="นางสาวกชพร บุณยเลขา">นางสาวกชพร บุณยเลขา</option>
+                        <option value="นางสาววาสนา เกตุบุตร">นางสาววาสนา เกตุบุตร</option>
+                        <option value="นายมนต์ชัย ดาเปรม">นายมนต์ชัย ดาเปรม</option>
+                        <option value="นางสาวอุษา บุณยเลขา">นางสาวอุษา บุณยเลขา</option>
+                        <option value="นางปัญฑรีย์ หอมหวล">นางปัญฑรีย์ หอมหวล</option>
+                        <option value="นางสาวรัตน์ ภูมิภาค">นางสาวรัตน์ ภูมิภาค</option>
+                        <option value="นางสาวอรพินท์ ยินดี">นางสาวอรพินท์ ยินดี</option>
+                        <option value="นางสาวกนกกร อ่อนเยียะ">นางสาวกนกกร อ่อนเยียะ</option>
+                    </select>
+                </div>
+                <hr>
+                <h5>ปริมาณขยะ (กิโลกรัม)</h5>
+                <div class="row">
+                    <div class="col-6 mb-2"><label>กระดาษ</label><input type="number" id="paper" class="form-control" value="0" step="0.1"></div>
+                    <div class="col-6 mb-2"><label>พลาสติก</label><input type="number" id="plastic" class="form-control" value="0" step="0.1"></div>
+                    <div class="col-6 mb-2"><label>เหล็ก</label><input type="number" id="iron" class="form-control" value="0" step="0.1"></div>
+                    <div class="col-6 mb-2"><label>โลหะผสม</label><input type="number" id="alloy" class="form-control" value="0" step="0.1"></div>
+                    <div class="col-6 mb-2"><label>แก้ว</label><input type="number" id="glass" class="form-control" value="0" step="0.1"></div>
+                    <div class="col-6 mb-2"><label>อลูมิเนียม</label><input type="number" id="alu" class="form-control" value="0" step="0.1"></div>
+                </div>
+                <button type="button" class="btn btn-primary w-100 mt-3" onclick="submitData()">บันทึกข้อมูล</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 🔴 ใส่ Web App URL ที่ได้จาก Google Apps Script ตรงนี้
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBXyQaTVLEPtA2Ome6WkgkHAVid4bBOeOigQ8DedGyFdhWqIKPY4s_w6rIS80aIHbdoQ/exec";
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if(pageId === 'page1' || pageId === 'page2') loadData();
+    }
+
+    // ฟังก์ชันเช็ครหัสผ่าน
+    function checkPassword() {
+        const pass = document.getElementById('passInput').value;
+        fetch(SCRIPT_URL + "?action=checkPass&password=" + pass)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status) {
+                    document.getElementById('passwordSection').style.display = 'none';
+                    document.getElementById('formSection').style.display = 'block';
+                    document.getElementById('passInput').value = '';
+                } else {
+                    alert('รหัสผ่านไม่ถูกต้อง');
+                }
+            });
+    }
+
+    // ฟังก์ชันส่งข้อมูล
+    function submitData() {
+        const payload = {
+            date: document.getElementById('date').value,
+            name: document.getElementById('name').value,
+            paper: document.getElementById('paper').value,
+            plastic: document.getElementById('plastic').value,
+            iron: document.getElementById('iron').value,
+            alloy: document.getElementById('alloy').value,
+            glass: document.getElementById('glass').value,
+            aluminum: document.getElementById('alu').value
+        };
+
+        if(!payload.date || !payload.name) return alert('กรุณากรอกวันที่และชื่อ');
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }).then(res => res.json())
+          .then(data => {
+              if(data.status === 'success') {
+                  alert('บันทึกข้อมูลเรียบร้อย');
+                  document.getElementById('recycleForm').reset();
+              }
+          });
+    }
+
+    // ฟังก์ชันดึงข้อมูลมาทำกราฟและตาราง (เขียนแบบจำลองเพื่อให้เห็นโครงสร้าง)
+    function loadData() {
+        fetch(SCRIPT_URL + "?action=getData")
+            .then(res => res.json())
+            .then(result => {
+                const rows = result.data.slice(1); // ตัด Header ออก
+                renderTable(rows);
+                // ในระบบจริง จะมีการเขียน JavaScript Array Reduce เพื่อจัดกลุ่มข้อมูลตาม ปีงบ/เดือน สำหรับ Chart.js
+                // สามารถใช้ Chart.js นำตัวแปร rows ไปสร้างกราฟแยกประเภทที่ต้องการได้ทันที
+            });
+    }
+
+    function renderTable(rows) {
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            r.forEach((cell, index) => {
+                const td = document.createElement('td');
+                // จัดรูปแบบวันที่ในคอลัมน์แรกๆ
+                td.textContent = (index === 0 || index === 1) ? new Date(cell).toLocaleDateString('th-TH') : cell;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+</body>
+</html>
